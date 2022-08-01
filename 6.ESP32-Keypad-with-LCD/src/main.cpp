@@ -25,7 +25,16 @@
 #define min "min"
 #define hour "h"
 
+void set_menu_page();
+void set_setting_page();
+void set_change_unit_page();
+void set_change_syringe_page();
+void set_new_injection_page();
+void set_injection_progress_page();
+void set_end_page();
+
 MCUFRIEND_kbv tft(LCD_CS, LCD_RS, LCD_WR, LCD_RD, LCD_RESET);
+
 int program_state;
 bool page_shown;
 
@@ -45,6 +54,96 @@ char keys[ROWS][COLS] = {
     {' ', '0', ' '}};
 
 Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+char key;
+
+static const BaseType_t pro_cpu = 0;
+static const BaseType_t app_cpu = 1;
+
+void task1(void *parameters)
+{
+    for (;;)
+    {
+        key = keypad.getKey();
+
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+void task2(void *parameters)
+{
+    for (;;)
+    {
+        if (!page_shown)
+        {
+            if (program_state == menu_page)
+            {
+                set_menu_page();
+                page_shown = true;
+            }
+            else if (program_state == setting_page)
+            {
+                set_setting_page();
+                page_shown = true;
+            }
+            else if (program_state == change_unit_page)
+            {
+                set_change_unit_page();
+                page_shown = true;
+            }
+            else if (program_state == change_syringe_page)
+            {
+                set_change_syringe_page();
+                page_shown = true;
+            }
+            else if (program_state == new_injection_page)
+            {
+                set_new_injection_page();
+                page_shown = true;
+            }
+            else if (program_state == injection_progress_page)
+            {
+                set_injection_progress_page();
+                page_shown = true;
+            }
+            else if (program_state == end_page)
+            {
+                set_end_page();
+                page_shown = true;
+            }
+        }
+
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+    }
+}
+
+void setup()
+{
+    uint16_t ID = tft.readID();
+    tft.begin(ID);
+    program_state = menu_page;
+    page_shown = false;
+    Serial.begin(9600);
+
+    xTaskCreate(
+        task1,
+        "Task 1",
+        1000,
+        NULL,
+        1,
+        NULL);
+
+    xTaskCreate(
+        task2,
+        "Task 2",
+        1000,
+        NULL,
+        1,
+        NULL);
+}
+
+void loop()
+{
+}
 
 /* to-do */
 /* tidy up (pretty - choose icon) - picture */
@@ -53,10 +152,15 @@ void set_menu_page()
     tft.fillScreen(BLACK);
 
     tft.fillRoundRect(60, 250, 200, 40, 8, RED);
-    tft.drawRoundRect(60, 250, 200, 40, 8, WHITE);
+
+    int thick = 3;
+    int radius = 8;
+    for (int i = 0; i < thick; i++)
+    {
+        tft.drawRoundRect(60 + i, 250 + i, 200 - i * 2, 40 - i * 2, radius, WHITE);
+    }
 
     tft.fillRoundRect(60, 300, 200, 40, 8, RED);
-    tft.drawRoundRect(60, 300, 200, 40, 8, WHITE);
 
     tft.setTextColor(WHITE);
 
@@ -355,62 +459,4 @@ void set_end_page()
     col = 135, row += 50;
     tft.setCursor(col, row);
     tft.print("EXIT");
-}
-
-void setup()
-{
-    uint16_t ID = tft.readID();
-    tft.begin(ID);
-    program_state = menu_page;
-    page_shown = false;
-    Serial.begin(9600);
-}
-
-void loop()
-{
-    if (!page_shown)
-    {
-        if (program_state == menu_page)
-        {
-            set_menu_page();
-            page_shown = true;
-        }
-        else if (program_state == setting_page)
-        {
-            set_setting_page();
-            page_shown = true;
-        }
-        else if (program_state == change_unit_page)
-        {
-            set_change_unit_page();
-            page_shown = true;
-        }
-        else if (program_state == change_syringe_page)
-        {
-            set_change_syringe_page();
-            page_shown = true;
-        }
-        else if (program_state == new_injection_page)
-        {
-            set_new_injection_page();
-            page_shown = true;
-        }
-        else if (program_state == injection_progress_page)
-        {
-            set_injection_progress_page();
-            page_shown = true;
-        }
-        else if (program_state == end_page)
-        {
-            set_end_page();
-            page_shown = true;
-        }
-    }
-
-    char key = keypad.getKey();
-
-    if (key)
-    {
-        Serial.println(key);
-    }
 }
