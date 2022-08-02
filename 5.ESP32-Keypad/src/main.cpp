@@ -14,41 +14,45 @@ char keys[ROWS][COLS] = {
 
 char key = '\0';
 bool flag = false;
+unsigned long last_button_time = 0;
+unsigned long hold_time = 0;
+
+int row_number, column_number;
 
 void IRAM_ATTR row_1_press_interrupt()
 {
+  hold_time = millis();
   flag = true;
-  // int row_number = 0;
-  // int column_number = -1;
 
-  // for (int col = 0; col < COLS; col++)
-  // {
-  //   digitalWrite(colPins[col], LOW);
-  // }
+  row_number = 0;
+  column_number = -1;
 
-  // for (int col = 0; col < COLS; col++)
-  // {
-  //   digitalWrite(colPins[col], HIGH);
-  //   if (digitalRead(rowPins[row_number]))
-  //   {
-  //     column_number = col;
-  //   }
-  //   digitalWrite(colPins[col], LOW);
-  // }
+  for (int col = 0; col < COLS; col++)
+  {
+    digitalWrite(colPins[col], LOW);
+  }
 
-  // for (int col = 0; col < COLS; col++)
-  // {
-  //   digitalWrite(colPins[col], HIGH);
-  // }
+  for (int col = 0; col < COLS; col++)
+  {
+    digitalWrite(colPins[col], HIGH);
+    if (digitalRead(rowPins[row_number]))
+    {
+      column_number = col;
+    }
+    digitalWrite(colPins[col], LOW);
+  }
 
-  // key = keys[row_number][column_number];
+  for (int col = 0; col < COLS; col++)
+  {
+    digitalWrite(colPins[col], HIGH);
+  }
 }
 
 void setup()
 {
   Serial.begin(9600);
 
-  pinMode(rowPins[0], INPUT_PULLUP);
+  pinMode(rowPins[0], INPUT);
 
   // for (int col = 0; col < COLS; col++)
   // {
@@ -59,15 +63,21 @@ void setup()
   // {
   //   pinMode(rowPins[row], INPUT_PULLUP);
   // }
-  
-  attachInterrupt(digitalPinToInterrupt(rowPins[0]), row_1_press_interrupt, FALLING);
+
+  attachInterrupt(digitalPinToInterrupt(rowPins[0]), row_1_press_interrupt, CHANGE);
 }
 
 void loop()
 {
-  if (flag) {
-    Serial.print(" Pressed ");
-    flag = false;
+  if (flag && digitalRead(rowPins[0]))
+  {
+    if (millis() - hold_time > 50)
+    {
+      key = keys[row_number][column_number];
+      Serial.print(key);
+      flag = false;
+      hold_time = 0;
+    }
   }
 
   // if (key != '\0')
