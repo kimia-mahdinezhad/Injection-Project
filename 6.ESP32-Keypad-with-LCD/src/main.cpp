@@ -17,6 +17,9 @@
 #define change_unit_page 11
 #define change_syringe_page 12
 #define new_injection_page 2
+#define new_injection_error_no_time_page 21
+#define new_injection_error_no_volume_or_rate_page 22
+#define new_injection_error_both_volume_and_rate_page 23
 #define injection_progress_page 3
 #define end_page 4
 
@@ -36,16 +39,23 @@ void set_change_syringe_page();
 void update_change_syringe_page(int);
 void set_new_injection_page();
 void update_new_injection_page(int);
+void set_new_injection_error_no_time_page();
+void update_new_injection_error_no_time_page(int);
+void set_new_injection_error_no_volume_or_rate_page();
+void update_new_injection_error_no_volume_or_rate_page(int);
+void set_new_injection_error_both_volume_and_rate_page();
+void update_new_injection_error_both_volume_and_rate_page(int);
 void set_injection_progress_page();
 void update_injection_progress_page(int);
 void set_end_page();
 void update_end_page(int);
 
-void up();
+void up(char);
 void right();
-void down();
+void down(char);
 void left();
-void ok();
+void ok(char);
+void enter(char);
 
 MCUFRIEND_kbv tft(LCD_CS, LCD_RS, LCD_WR, LCD_RD, LCD_RESET);
 
@@ -58,6 +68,10 @@ char available_time_units[2][4] = {{"min"}, {"h"}};
 int time_unit = 0;
 char available_rate_units[4][8] = {{"mL/min"}, {"mL/h"}, {"muL/min"}, {"muL/h"}};
 int rate_unit = 0;
+
+double input_time = 0, temp_time = 0;
+double input_volume = 0, temp_volume = 0;
+double input_rate = 0, temp_rate = 0;
 
 int syringe = 1;
 
@@ -90,9 +104,14 @@ void loop()
 {
     char key = keypad.getKey();
 
+    if (program_state == new_injection_page && key >= '0' && key <= '9')
+    {
+        enter(key);
+    }
+
     if (key == '2' || key == 'A')
     {
-        up();
+        up(key);
     }
     else if (key == '6')
     {
@@ -100,7 +119,7 @@ void loop()
     }
     else if (key == '8' || key == 'B')
     {
-        down();
+        down(key);
     }
     else if (key == '4')
     {
@@ -108,39 +127,45 @@ void loop()
     }
     else if (key == '5' || key == 'C')
     {
-        ok();
+        ok(key);
     }
 }
 
-void up()
+void up(char key)
 {
-    if (program_state == menu_page)
+    if (key == '2')
     {
-        update_menu_page(up_move);
+        if (program_state == menu_page)
+        {
+            update_menu_page(up_move);
+        }
+        else if (program_state == setting_page)
+        {
+            update_setting_page(up_move);
+        }
+        else if (program_state == change_unit_page)
+        {
+            update_change_unit_page(up_move);
+        }
+        else if (program_state == change_syringe_page)
+        {
+            update_change_syringe_page(up_move);
+        }
+        else if (program_state == injection_progress_page)
+        {
+            update_injection_progress_page(up_move);
+        }
+        else if (program_state == end_page)
+        {
+            update_end_page(up_move);
+        }
     }
-    else if (program_state == setting_page)
+    else
     {
-        update_setting_page(up_move);
-    }
-    else if (program_state == change_unit_page)
-    {
-        update_change_unit_page(up_move);
-    }
-    else if (program_state == change_syringe_page)
-    {
-        update_change_syringe_page(up_move);
-    }
-    else if (program_state == new_injection_page)
-    {
-        update_new_injection_page(up_move);
-    }
-    else if (program_state == injection_progress_page)
-    {
-        update_injection_progress_page(up_move);
-    }
-    else if (program_state == end_page)
-    {
-        update_end_page(up_move);
+        if (program_state == new_injection_page)
+        {
+            update_new_injection_page(up_move);
+        }
     }
 }
 
@@ -152,35 +177,41 @@ void right()
     }
 }
 
-void down()
+void down(char key)
 {
-    if (program_state == menu_page)
+    if (key == '8')
     {
-        update_menu_page(down_move);
+        if (program_state == menu_page)
+        {
+            update_menu_page(down_move);
+        }
+        else if (program_state == setting_page)
+        {
+            update_setting_page(down_move);
+        }
+        else if (program_state == change_unit_page)
+        {
+            update_change_unit_page(down_move);
+        }
+        else if (program_state == change_syringe_page)
+        {
+            update_change_syringe_page(down_move);
+        }
+        else if (program_state == injection_progress_page)
+        {
+            update_injection_progress_page(down_move);
+        }
+        else if (program_state == end_page)
+        {
+            update_end_page(down_move);
+        }
     }
-    else if (program_state == setting_page)
+    else
     {
-        update_setting_page(down_move);
-    }
-    else if (program_state == change_unit_page)
-    {
-        update_change_unit_page(down_move);
-    }
-    else if (program_state == change_syringe_page)
-    {
-        update_change_syringe_page(down_move);
-    }
-    else if (program_state == new_injection_page)
-    {
-        update_new_injection_page(down_move);
-    }
-    else if (program_state == injection_progress_page)
-    {
-        update_injection_progress_page(down_move);
-    }
-    else if (program_state == end_page)
-    {
-        update_end_page(down_move);
+        if (program_state == new_injection_page)
+        {
+            update_new_injection_page(down_move);
+        }
     }
 }
 
@@ -192,36 +223,59 @@ void left()
     }
 }
 
-void ok()
+void ok(char key)
 {
-    if (program_state == menu_page)
+    if (key == '5')
     {
-        update_menu_page(ok_move);
+        if (program_state == menu_page)
+        {
+            update_menu_page(ok_move);
+        }
+        else if (program_state == setting_page)
+        {
+            update_setting_page(ok_move);
+        }
+        else if (program_state == change_unit_page)
+        {
+            update_change_unit_page(ok_move);
+        }
+        else if (program_state == change_syringe_page)
+        {
+            update_change_syringe_page(ok_move);
+        }
+        else if (program_state == new_injection_error_no_time_page)
+        {
+            update_new_injection_error_no_time_page(ok_move);
+        }
+        else if (program_state == new_injection_error_no_volume_or_rate_page)
+        {
+            update_new_injection_error_no_volume_or_rate_page(ok_move);
+        }
+        else if (program_state == new_injection_error_both_volume_and_rate_page)
+        {
+            update_new_injection_error_both_volume_and_rate_page(ok_move);
+        }
+        else if (program_state == injection_progress_page)
+        {
+            update_injection_progress_page(ok_move);
+        }
+        else if (program_state == ok_move)
+        {
+            update_end_page(ok_move);
+        }
     }
-    else if (program_state == setting_page)
+    else
     {
-        update_setting_page(ok_move);
+        if (program_state == new_injection_page)
+        {
+            update_new_injection_page(ok_move);
+        }
     }
-    else if (program_state == change_unit_page)
-    {
-        update_change_unit_page(ok_move);
-    }
-    else if (program_state == change_syringe_page)
-    {
-        update_change_syringe_page(ok_move);
-    }
-    else if (program_state == new_injection_page)
-    {
-        update_new_injection_page(ok_move);
-    }
-    else if (program_state == injection_progress_page)
-    {
-        update_injection_progress_page(ok_move);
-    }
-    else if (program_state == ok_move)
-    {
-        update_end_page(ok_move);
-    }
+}
+
+void enter(char key)
+{
+    update_new_injection_page(key - '0');
 }
 
 /* to-do */
@@ -414,8 +468,8 @@ void update_setting_page(int move)
         {
             program_state = change_unit_page;
             current_button_row = 0;
-            current_button_col[0] = volume_unit;
-            current_button_col[1] = time_unit;
+            current_button_col[0] = time_unit;
+            current_button_col[1] = volume_unit;
             current_button_col[2] = rate_unit;
             set_change_unit_page();
         }
@@ -1023,8 +1077,8 @@ void update_change_unit_page(int move)
     {
         if (current_button_row == 3)
         {
-            volume_unit = current_button_col[0];
-            time_unit = current_button_col[1];
+            time_unit = current_button_col[0];
+            volume_unit = current_button_col[1];
             rate_unit = current_button_col[2];
 
             current_button_row = 0;
@@ -1032,7 +1086,6 @@ void update_change_unit_page(int move)
             if (new_injection_flag)
             {
                 program_state = new_injection_page;
-                new_injection_flag = false;
                 set_new_injection_page();
             }
             else
@@ -1047,7 +1100,6 @@ void update_change_unit_page(int move)
             if (new_injection_flag)
             {
                 program_state = new_injection_page;
-                new_injection_flag = false;
                 set_new_injection_page();
             }
             else
@@ -1204,12 +1256,9 @@ void update_change_syringe_page(int move)
 
         if (current_button_row == 4)
         {
-            char curr_message[10];
-            sprintf(curr_message, "syringe %d", current_button_row + 1);
-
             tft.setTextColor(RED);
             tft.setCursor(Curr_col, curr_row);
-            tft.print(curr_message);
+            tft.printf("syringe %d", current_button_row + 1);
         }
         else if (current_button_row == 5)
         {
@@ -1225,12 +1274,9 @@ void update_change_syringe_page(int move)
             tft.setCursor(last_col, last_row);
             tft.print(last_message);
 
-            char curr_message[10];
-            sprintf(curr_message, "syringe %d", current_button_row + 1);
-
             tft.setTextColor(RED);
             tft.setCursor(Curr_col, curr_row);
-            tft.print(curr_message);
+            tft.printf("syringe %d", current_button_row + 1);
         }
     }
     else if (move == down_move)
@@ -1287,12 +1333,9 @@ void update_change_syringe_page(int move)
 
         if (current_button_row == 0)
         {
-            char curr_message[10];
-            sprintf(curr_message, "syringe %d", current_button_row + 1);
-
             tft.setTextColor(RED);
             tft.setCursor(Curr_col, curr_row);
-            tft.print(curr_message);
+            tft.printf("syringe %d", current_button_row + 1);
         }
         else if (current_button_row == 5)
         {
@@ -1308,12 +1351,9 @@ void update_change_syringe_page(int move)
             tft.setCursor(last_col, last_row);
             tft.print(last_message);
 
-            char curr_message[10];
-            sprintf(curr_message, "syringe %d", current_button_row + 1);
-
             tft.setTextColor(RED);
             tft.setCursor(Curr_col, curr_row);
-            tft.print(curr_message);
+            tft.printf("syringe %d", current_button_row + 1);
         }
     }
     else if (move == ok_move)
@@ -1324,7 +1364,6 @@ void update_change_syringe_page(int move)
             if (new_injection_flag)
             {
                 program_state = new_injection_page;
-                new_injection_flag = false;
                 set_new_injection_page();
             }
             else
@@ -1341,7 +1380,6 @@ void update_change_syringe_page(int move)
             if (new_injection_flag)
             {
                 program_state = new_injection_page;
-                new_injection_flag = false;
                 set_new_injection_page();
             }
             else
@@ -1365,38 +1403,55 @@ void set_new_injection_page()
     int unit_col = 255;
     int box_col = 20;
 
-    /* volume */
-    int row = 50, col = 20;
-    tft.setTextColor(RED);
-    tft.setCursor(col, row);
-    tft.print("Volume:");
-    tft.setTextColor(WHITE);
-
-    row += 20;
-    tft.drawRect(box_col, row, 230, 30, WHITE);
-
-    tft.setCursor(24, 78);
-    tft.print("1234567890");
-
-    tft.setTextSize(1);
-    tft.setCursor(unit_col, row + 10);
-    tft.print(available_volume_units[volume_unit]);
-    tft.setTextSize(2);
-
     /* time */
-    row = 120, col = 20;
-    tft.setCursor(col, row);
-    tft.print("Time:");
+    int row, col;
+    if (current_button_row == 0)
+    {
+        tft.setTextColor(RED);
+        row = 50, col = 20;
+        tft.setCursor(col, row);
+        tft.print("Time:");
+        tft.setTextColor(WHITE);
+    }
+    else
+    {
+        row = 50, col = 20;
+        tft.setTextColor(WHITE);
+        tft.setCursor(col, row);
+        tft.print("Time:");
+    }
 
     row += 20;
     tft.drawRect(box_col, row, 230, 30, WHITE);
-
-    tft.setCursor(24, 148);
-    tft.print("123456789");
 
     tft.setTextSize(1);
     tft.setCursor(unit_col, row + 10);
     tft.print(available_time_units[time_unit]);
+    tft.setTextSize(2);
+
+    /* volume */
+    if (current_button_row == 1)
+    {
+        tft.setTextColor(RED);
+        row = 120, col = 20;
+        tft.setCursor(col, row);
+        tft.print("Volume:");
+        tft.setTextColor(WHITE);
+    }
+    else
+    {
+        tft.setTextColor(WHITE);
+        row = 120, col = 20;
+        tft.setCursor(col, row);
+        tft.print("Volume:");
+    }
+
+    row += 20;
+    tft.drawRect(box_col, row, 230, 30, WHITE);
+
+    tft.setTextSize(1);
+    tft.setCursor(unit_col, row + 10);
+    tft.print(available_volume_units[volume_unit]);
     tft.setTextSize(2);
 
     /* or */
@@ -1413,13 +1468,38 @@ void set_new_injection_page()
     row += 20;
     tft.drawRect(box_col, row, 230, 30, WHITE);
 
-    tft.setCursor(24, 238);
-    tft.print("1234567890");
-
     tft.setTextSize(1);
     tft.setCursor(unit_col, row + 10);
     tft.print(available_rate_units[rate_unit]);
     tft.setTextSize(2);
+
+    /* Syringe */
+    row += 50, col = 20;
+    tft.setCursor(col, row);
+    tft.printf("Syringe type %d", syringe);
+
+    if (new_injection_flag)
+    {
+        if (temp_time != 0)
+        {
+            tft.setCursor(24, 78);
+            tft.printf("%.2f", temp_time);
+        }
+
+        if (temp_volume != 0)
+        {
+            tft.setCursor(24, 148);
+            tft.printf("%.2f", temp_volume);
+        }
+
+        if (temp_rate != 0)
+        {
+            tft.setCursor(24, 238);
+            tft.printf("%.2f", temp_rate);
+        }
+
+        new_injection_flag = false;
+    }
 
     /* buttons */
     int width = 180, height = 34, rounding_facotr = 8, diff = 41;
@@ -1453,9 +1533,9 @@ void set_new_injection_page()
     tft.print("Back");
 }
 
-void update_new_injection_page(int move)
+void update_new_injection_page(int move_or_number)
 {
-    if (move == up_move)
+    if (move_or_number == up_move)
     {
         int last_row, last_col = 20, curr_row, Curr_col = 20;
 
@@ -1465,7 +1545,7 @@ void update_new_injection_page(int move)
         if (current_button_row == 0)
         {
             last_row = 50;
-            sprintf(last_message, "Volume:");
+            sprintf(last_message, "Time:");
 
             for (int i = 0; i < 3; i++)
             {
@@ -1477,9 +1557,9 @@ void update_new_injection_page(int move)
         else if (current_button_row == 1)
         {
             last_row = 120;
-            sprintf(last_message, "Time:");
+            sprintf(last_message, "Volume:");
             curr_row = 50;
-            sprintf(curr_message, "Volume:");
+            sprintf(curr_message, "Time:");
             current_button_row = 0;
         }
         else if (current_button_row == 2)
@@ -1487,7 +1567,7 @@ void update_new_injection_page(int move)
             last_row = 210;
             sprintf(last_message, "Volume Flow Rate:");
             curr_row = 120;
-            sprintf(curr_message, "Time:");
+            sprintf(curr_message, "Volume:");
             current_button_row = 1;
         }
         else if (current_button_row == 3)
@@ -1570,7 +1650,7 @@ void update_new_injection_page(int move)
             tft.print(curr_message);
         }
     }
-    else if (move == down_move)
+    else if (move_or_number == down_move)
     {
         int last_row, last_col = 20, curr_row, Curr_col = 20;
 
@@ -1580,16 +1660,16 @@ void update_new_injection_page(int move)
         if (current_button_row == 0)
         {
             last_row = 50;
-            sprintf(last_message, "Volume:");
+            sprintf(last_message, "Time:");
             curr_row = 120;
-            sprintf(curr_message, "Time:");
+            sprintf(curr_message, "Volume:");
 
             current_button_row = 1;
         }
         else if (current_button_row == 1)
         {
             last_row = 120;
-            sprintf(last_message, "Time:");
+            sprintf(last_message, "Volume:");
             curr_row = 210;
             sprintf(curr_message, "Volume Flow Rate:");
 
@@ -1657,7 +1737,7 @@ void update_new_injection_page(int move)
             }
 
             curr_row = 50;
-            sprintf(curr_message, "Volume:");
+            sprintf(curr_message, "Time:");
 
             current_button_row = 0;
         }
@@ -1687,37 +1767,264 @@ void update_new_injection_page(int move)
             tft.print(curr_message);
         }
     }
-    else if (move == ok_move)
+    else if (move_or_number == ok_move)
     {
-        if (current_button_row == 3)
+        if (current_button_row == 3) // Change Unit
         {
             program_state = change_unit_page;
             current_button_row = 0;
             new_injection_flag = true;
-            current_button_col[0] = volume_unit;
-            current_button_col[1] = time_unit;
+            current_button_col[0] = time_unit;
+            current_button_col[1] = volume_unit;
             current_button_col[2] = rate_unit;
             set_change_unit_page();
         }
-        else if (current_button_row == 4)
+        else if (current_button_row == 4) // Change Syringe
         {
             program_state = change_syringe_page;
             current_button_row = syringe - 1;
             new_injection_flag = true;
             set_change_syringe_page();
         }
-        else if (current_button_row == 5)
+        else if (current_button_row == 5) // Create
         {
-            program_state = injection_progress_page;
-            current_button_row = 0;
-            set_injection_progress_page();
+            if (temp_time == 0)
+            {
+                program_state = new_injection_error_no_time_page;
+                current_button_row = 0;
+                set_new_injection_error_no_time_page();
+            }
+            else if (temp_volume == 0 && temp_rate == 0)
+            {
+                program_state = new_injection_error_no_volume_or_rate_page;
+                current_button_row = 0;
+                set_new_injection_error_no_volume_or_rate_page();
+            }
+            else if (temp_volume == 0)
+            {
+                input_time = temp_time;
+                input_rate = temp_rate;
+                temp_time = 0;
+                temp_rate = 0;
+                program_state = injection_progress_page;
+                current_button_row = 0;
+                set_injection_progress_page();
+            }
+            else if (temp_rate == 0)
+            {
+                input_time = temp_time;
+                input_volume = temp_volume;
+                temp_time = 0;
+                temp_volume = 0;
+                program_state = injection_progress_page;
+                current_button_row = 0;
+                set_injection_progress_page();
+            }
+            else if (temp_volume != 0 && temp_rate != 0)
+            {
+                program_state = new_injection_error_both_volume_and_rate_page;
+                current_button_row = 0;
+                set_new_injection_error_both_volume_and_rate_page();
+            }
         }
-        else if (current_button_row == 6)
+        else if (current_button_row == 6) // Back
         {
             program_state = menu_page;
+            temp_volume = 0;
+            temp_time = 0;
+            temp_rate = 0;
             current_button_row = 0;
             set_menu_page();
         }
+    }
+    else
+    {
+        if (current_button_row == 0)
+        {
+            temp_time *= 10;
+            temp_time += move_or_number;
+
+            tft.fillRect(20, 70, 230, 30, BLACK);
+            tft.drawRect(20, 70, 230, 30, WHITE);
+
+            tft.setTextColor(WHITE);
+            tft.setCursor(24, 78);
+            tft.printf("%.2f", temp_time);
+        }
+        else if (current_button_row == 1)
+        {
+            temp_volume *= 10;
+            temp_volume += move_or_number;
+
+            tft.fillRect(20, 140, 230, 30, BLACK);
+            tft.drawRect(20, 140, 230, 30, WHITE);
+
+            tft.setTextColor(WHITE);
+            tft.setCursor(24, 148);
+            tft.printf("%.2f", temp_volume);
+        }
+        else if (current_button_row == 2)
+        {
+            temp_rate *= 10;
+            temp_rate += move_or_number;
+
+            tft.fillRect(20, 230, 230, 30, BLACK);
+            tft.drawRect(20, 230, 230, 30, WHITE);
+
+            tft.setTextColor(WHITE);
+            tft.setCursor(24, 238);
+            tft.printf("%.2f", temp_rate);
+        }
+    }
+}
+
+/* */
+void set_new_injection_error_no_time_page()
+{
+    tft.fillScreen(BLACK);
+
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE);
+
+    /* volume */
+    int row = 180, col = 80;
+    tft.setCursor(col, row);
+    tft.print("Please Enter ");
+
+    row = 210, col = 120;
+    tft.setCursor(col, row);
+    tft.setTextSize(3);
+    tft.setTextColor(RED);
+    tft.print("Time");
+
+    /* buttons */
+    int width = 180, height = 34, rounding_facotr = 8, diff = 41;
+
+    col = 70, row = 310;
+    tft.fillRoundRect(col, row, width, height, rounding_facotr, RED);
+
+    for (int i = 0; i < 3; i++)
+    {
+        tft.drawRoundRect(col + i, row + i, width - i * 2, height - i * 2, rounding_facotr, WHITE);
+    }
+
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE);
+    col = 145, row = 320;
+    tft.setCursor(col, row);
+    tft.print("OK");
+}
+
+void update_new_injection_error_no_time_page(int move)
+{
+    if (move == ok_move && current_button_row == 0)
+    {
+        program_state = new_injection_page;
+        current_button_row = 0;
+        new_injection_flag = true;
+        set_new_injection_page();
+    }
+}
+
+/* */
+void set_new_injection_error_no_volume_or_rate_page()
+{
+    tft.fillScreen(BLACK);
+
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE);
+
+    /* error */
+    int row = 180, col = 80;
+    tft.setCursor(col, row);
+    tft.print("Please Enter");
+
+    row = 210, col = 25;
+    tft.setCursor(col, row);
+    tft.setTextSize(3);
+    tft.setTextColor(RED);
+    tft.print("Volume or Rate");
+
+    /* buttons */
+    int width = 180, height = 34, rounding_facotr = 8, diff = 41;
+
+    col = 70, row = 310;
+    tft.fillRoundRect(col, row, width, height, rounding_facotr, RED);
+
+    for (int i = 0; i < 3; i++)
+    {
+        tft.drawRoundRect(col + i, row + i, width - i * 2, height - i * 2, rounding_facotr, WHITE);
+    }
+
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE);
+    col = 145, row = 320;
+    tft.setCursor(col, row);
+    tft.print("OK");
+}
+
+void update_new_injection_error_no_volume_or_rate_page(int move)
+{
+    if (move == ok_move && current_button_row == 0)
+    {
+        program_state = new_injection_page;
+        current_button_row = 1;
+        new_injection_flag = true;
+        set_new_injection_page();
+    }
+}
+
+/* */
+void set_new_injection_error_both_volume_and_rate_page()
+{
+    tft.fillScreen(BLACK);
+
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE);
+
+    /* volume */
+    int row = 150, col = 90;
+    tft.setCursor(col, row);
+    tft.print("Please Enter");
+
+    row = 180, col = 40;
+    tft.setCursor(col, row);
+    tft.print("only Volume or Rate");
+
+    row = 210, col = 90;
+    tft.setCursor(col, row);
+    tft.setTextSize(3);
+    tft.setTextColor(RED);
+    tft.print("Not Both");
+
+    /* buttons */
+    int width = 180, height = 34, rounding_facotr = 8, diff = 41;
+
+    col = 70, row = 310;
+    tft.fillRoundRect(col, row, width, height, rounding_facotr, RED);
+
+    for (int i = 0; i < 3; i++)
+    {
+        tft.drawRoundRect(col + i, row + i, width - i * 2, height - i * 2, rounding_facotr, WHITE);
+    }
+
+    tft.setTextSize(2);
+    tft.setTextColor(WHITE);
+    col = 145, row = 320;
+    tft.setCursor(col, row);
+    tft.print("OK");
+}
+
+void update_new_injection_error_both_volume_and_rate_page(int move)
+{
+    if (move == ok_move && current_button_row == 0)
+    {
+        program_state = new_injection_page;
+        temp_volume = 0;
+        temp_rate = 0;
+        current_button_row = 1;
+        new_injection_flag = true;
+        set_new_injection_page();
     }
 }
 
@@ -1733,9 +2040,7 @@ void set_injection_progress_page()
     /* volume */
     int row = 50, col = 10;
     tft.setCursor(col, row);
-    char message[100];
-    sprintf(message, "Remaining Volume %d %s", 1000, available_volume_units[volume_unit]);
-    tft.print(message);
+    tft.printf("Remaining Volume %d %s", 1000, available_volume_units[volume_unit]);
 
     row += 30, col = 10;
     tft.drawRect(col, row - 5, 300, 25, WHITE);
@@ -1743,9 +2048,7 @@ void set_injection_progress_page()
     /* time */
     row = 150, col = 10;
     tft.setCursor(col, row);
-    message[0] = '\0';
-    sprintf(message, "Remaining Time %d:%d", 1, 20);
-    tft.print(message);
+    tft.printf("Remaining Time %d:%d", 1, 20);
 
     row += 30, col = 10;
     tft.drawRect(col, row - 5, 300, 25, WHITE);
@@ -1753,9 +2056,7 @@ void set_injection_progress_page()
     /* rate */
     row = 280, col = 10;
     tft.setCursor(col, row);
-    message[0] = '\0';
-    sprintf(message, "Current Rate %d %s/%s", 1111, available_volume_units[volume_unit], available_time_units[time_unit]);
-    tft.print(message);
+    tft.printf("Current Rate %d %s/%s", 1111, available_volume_units[volume_unit], available_time_units[time_unit]);
 
     /* animation */
     row = 350, col = 10;
@@ -1857,15 +2158,11 @@ void set_end_page()
     tft.print("Total injected Volume");
 
     tft.setCursor(10, 170);
-    char message[100];
-    sprintf(message, "%d %s of %d %s", 1, available_volume_units[volume_unit], 1, available_volume_units[volume_unit]);
-    tft.print(message);
+    tft.printf("%d %s of %d %s", 1, available_volume_units[volume_unit], 1, available_volume_units[volume_unit]);
 
     /* time */
     tft.setCursor(10, 230);
-    message[0] = '\0';
-    sprintf(message, "Total passed Time: %d:%d", 1, 20);
-    tft.print(message);
+    tft.printf("Total passed Time: %d:%d", 1, 20);
 
     /* buttons */
     int width = 180, height = 32, rounding_facotr = 8;
