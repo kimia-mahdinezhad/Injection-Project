@@ -1,6 +1,7 @@
-#include <Keypad.h>
 #include <Adafruit_GFX.h>
 #include <MCUFRIEND_kbv.h>
+#include <Wire.h>
+#include <I2CKeyPad.h>
 
 #define BLACK 0x0000
 #define RED 0xF800
@@ -75,18 +76,12 @@ double input_rate = 0, temp_rate = 0;
 
 int syringe = 1;
 
-const byte ROWS = 3;
-const byte COLS = 4;
+const uint8_t KEYPAD_ADDRESS = 0x20;
+I2CKeyPad keyPad(KEYPAD_ADDRESS);
 
-byte rowPins[ROWS] = {23, 22, 21};
-byte colPins[COLS] = {18, 5, 0, 19};
+char keys[] = "123A456B789C*0#DNF";
 
-char keys[ROWS][COLS] = {
-    {'1', '2', '3', 'A'},
-    {'4', '5', '6', 'B'},
-    {'7', '8', '9', 'C'}};
-
-Keypad keypad = Keypad(makeKeymap(keys), rowPins, colPins, ROWS, COLS);
+uint32_t lastKeyPressed = 0;
 
 int current_button_row = 0;
 int current_button_col[3] = {0};
@@ -98,11 +93,28 @@ void setup()
     program_state = menu_page;
     set_menu_page();
     Serial.begin(9600);
+    keyPad.begin();
 }
 
 void loop()
 {
-    char key = keypad.getKey();
+    char key = '\0';
+
+    if (millis() - lastKeyPressed >= 200)
+    {
+        int index = keyPad.getKey();
+        if (index < 12)
+        {
+            key = keys[index];
+            if (key == '2')
+            {
+                Serial.print(key + " ");
+            }
+
+            Serial.println(key);
+        }
+        lastKeyPressed = millis();
+    }
 
     if (program_state == new_injection_page && key >= '0' && key <= '9')
     {
