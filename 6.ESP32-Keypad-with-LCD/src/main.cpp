@@ -29,6 +29,7 @@
 #define down_move 80
 #define left_move 40
 #define ok_move 50
+#define erase_move 100
 
 void set_menu_page();
 void update_menu_page(int);
@@ -51,12 +52,16 @@ void update_injection_progress_page(int);
 void set_end_page();
 void update_end_page(int);
 
-void up(char);
+void up();
+void down();
 void right();
-void down(char);
 void left();
-void ok(char);
+void ok();
 void enter(char);
+void erase();
+
+void stepper_move();
+double calculate_height();
 
 MCUFRIEND_kbv tft(LCD_CS, LCD_RS, LCD_WR, LCD_RD, LCD_RESET);
 
@@ -71,8 +76,12 @@ char available_rate_units[4][8] = {{"mL/min"}, {"mL/h"}, {"muL/min"}, {"muL/h"}}
 int rate_unit = 0;
 
 double input_time = 0, temp_time = 0;
+int time_point_count = 0;
 double input_volume = 0, temp_volume = 0;
+int volume_point_count = 0;
 double input_rate = 0, temp_rate = 0;
+int rate_point_count = 0;
+double height = 0;
 
 int syringe = 1;
 
@@ -86,9 +95,15 @@ uint32_t lastKeyPressed = 0;
 int current_button_row = 0;
 int current_button_col[3] = {0};
 
+#define step 23
+#define dir 19
+// #define PI 3.14159265359
+
 void setup()
 {
     uint16_t ID = tft.readID();
+    pinMode(step, OUTPUT);
+    pinMode(dir, OUTPUT);
     tft.begin(ID);
     program_state = menu_page;
     set_menu_page();
@@ -99,85 +114,108 @@ void setup()
 void loop()
 {
     char key = '\0';
-
-    if (millis() - lastKeyPressed >= 200)
+    if (millis() - lastKeyPressed >= 200) // figure key
     {
         int index = keyPad.getKey();
-        if (index < 12)
+        if (index < 16)
         {
             key = keys[index];
-            if (key == '2')
-            {
-                Serial.print(key + " ");
-            }
-
-            Serial.println(key);
         }
         lastKeyPressed = millis();
     }
 
-    if (program_state == new_injection_page && key >= '0' && key <= '9')
+    if (key >= '0' && key <= '9') // enter
     {
         enter(key);
     }
-
-    if (key == '2' || key == 'A')
+    else if (key == 'A') // up
     {
-        up(key);
+        up();
     }
-    else if (key == '6')
+    else if (key == 'B') // down
+    {
+        down();
+    }
+    else if (key == 'C') // right
     {
         right();
     }
-    else if (key == '8' || key == 'B')
-    {
-        down(key);
-    }
-    else if (key == '4')
+    else if (key == 'D') // left
     {
         left();
     }
-    else if (key == '5' || key == 'C')
+    else if (key == '#') // ok
     {
-        ok(key);
+        ok();
+    }
+    else if (key == '*')
+    {
+        erase();
     }
 }
 
-void up(char key)
+/* moves */
+void up()
 {
-    if (key == '2')
+    if (program_state == menu_page)
     {
-        if (program_state == menu_page)
-        {
-            update_menu_page(up_move);
-        }
-        else if (program_state == setting_page)
-        {
-            update_setting_page(up_move);
-        }
-        else if (program_state == change_unit_page)
-        {
-            update_change_unit_page(up_move);
-        }
-        else if (program_state == change_syringe_page)
-        {
-            update_change_syringe_page(up_move);
-        }
-        else if (program_state == injection_progress_page)
-        {
-            update_injection_progress_page(up_move);
-        }
-        else if (program_state == end_page)
-        {
-            update_end_page(up_move);
-        }
+        update_menu_page(up_move);
     }
-    else
+    else if (program_state == setting_page)
     {
-        if (program_state == new_injection_page)
-        {
-            update_new_injection_page(up_move);
-        }
+        update_setting_page(up_move);
+    }
+    else if (program_state == change_unit_page)
+    {
+        update_change_unit_page(up_move);
+    }
+    else if (program_state == change_syringe_page)
+    {
+        update_change_syringe_page(up_move);
+    }
+    else if (program_state == new_injection_page)
+    {
+        update_new_injection_page(up_move);
+    }
+    else if (program_state == injection_progress_page)
+    {
+        update_injection_progress_page(up_move);
+    }
+    else if (program_state == end_page)
+    {
+        update_end_page(up_move);
+    }
+}
+
+void down()
+{
+    if (program_state == menu_page)
+    {
+        update_menu_page(down_move);
+    }
+    else if (program_state == setting_page)
+    {
+        update_setting_page(down_move);
+    }
+    else if (program_state == change_unit_page)
+    {
+        update_change_unit_page(down_move);
+    }
+    else if (program_state == change_syringe_page)
+    {
+        update_change_syringe_page(down_move);
+    }
+    else if (program_state == new_injection_page)
+    {
+        update_new_injection_page(down_move);
+    }
+    else if (program_state == injection_progress_page)
+    {
+        update_injection_progress_page(down_move);
+    }
+    else if (program_state == end_page)
+    {
+        update_end_page(down_move);
     }
 }
 
@@ -187,43 +225,9 @@ void right()
     {
         update_change_unit_page(right_move);
     }
-}
-
-void down(char key)
-{
-    if (key == '8')
+    else if (program_state == new_injection_page)
     {
-        if (program_state == menu_page)
-        {
-            update_menu_page(down_move);
-        }
-        else if (program_state == setting_page)
-        {
-            update_setting_page(down_move);
-        }
-        else if (program_state == change_unit_page)
-        {
-            update_change_unit_page(down_move);
-        }
-        else if (program_state == change_syringe_page)
-        {
-            update_change_syringe_page(down_move);
-        }
-        else if (program_state == injection_progress_page)
-        {
-            update_injection_progress_page(down_move);
-        }
-        else if (program_state == end_page)
-        {
-            update_end_page(down_move);
-        }
-    }
-    else
-    {
-        if (program_state == new_injection_page)
-        {
-            update_new_injection_page(down_move);
-        }
+        update_new_injection_page(right_move);
     }
 }
 
@@ -235,59 +239,64 @@ void left()
     }
 }
 
-void ok(char key)
+void ok()
 {
-    if (key == '5')
+    if (program_state == menu_page)
     {
-        if (program_state == menu_page)
-        {
-            update_menu_page(ok_move);
-        }
-        else if (program_state == setting_page)
-        {
-            update_setting_page(ok_move);
-        }
-        else if (program_state == change_unit_page)
-        {
-            update_change_unit_page(ok_move);
-        }
-        else if (program_state == change_syringe_page)
-        {
-            update_change_syringe_page(ok_move);
-        }
-        else if (program_state == new_injection_error_no_time_page)
-        {
-            update_new_injection_error_no_time_page(ok_move);
-        }
-        else if (program_state == new_injection_error_no_volume_or_rate_page)
-        {
-            update_new_injection_error_no_volume_or_rate_page(ok_move);
-        }
-        else if (program_state == new_injection_error_both_volume_and_rate_page)
-        {
-            update_new_injection_error_both_volume_and_rate_page(ok_move);
-        }
-        else if (program_state == injection_progress_page)
-        {
-            update_injection_progress_page(ok_move);
-        }
-        else if (program_state == ok_move)
-        {
-            update_end_page(ok_move);
-        }
+        update_menu_page(ok_move);
     }
-    else
+    else if (program_state == setting_page)
     {
-        if (program_state == new_injection_page)
-        {
-            update_new_injection_page(ok_move);
-        }
+        update_setting_page(ok_move);
+    }
+    else if (program_state == change_unit_page)
+    {
+        update_change_unit_page(ok_move);
+    }
+    else if (program_state == change_syringe_page)
+    {
+        update_change_syringe_page(ok_move);
+    }
+    else if (program_state == new_injection_page)
+    {
+        update_new_injection_page(ok_move);
+    }
+    else if (program_state == new_injection_error_no_time_page)
+    {
+        update_new_injection_error_no_time_page(ok_move);
+    }
+    else if (program_state == new_injection_error_no_volume_or_rate_page)
+    {
+        update_new_injection_error_no_volume_or_rate_page(ok_move);
+    }
+    else if (program_state == new_injection_error_both_volume_and_rate_page)
+    {
+        update_new_injection_error_both_volume_and_rate_page(ok_move);
+    }
+    else if (program_state == injection_progress_page)
+    {
+        update_injection_progress_page(ok_move);
+    }
+    else if (program_state == ok_move)
+    {
+        update_end_page(ok_move);
     }
 }
 
 void enter(char key)
 {
-    update_new_injection_page(key - '0');
+    if (program_state == new_injection_page)
+    {
+        update_new_injection_page(key - '0');
+    }
+}
+
+void erase()
+{
+    if (program_state == new_injection_page)
+    {
+        update_new_injection_page(erase_move);
+    }
 }
 
 /* to-do */
@@ -1779,6 +1788,51 @@ void update_new_injection_page(int move_or_number)
             tft.print(curr_message);
         }
     }
+    else if (move_or_number == right_move)
+    {
+        if (current_button_row == 0)
+        {
+            if (time_point_count == 0)
+            {
+                tft.fillRect(20, 70, 230, 30, BLACK);
+                tft.drawRect(20, 70, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 78);
+                tft.printf("%.1f", temp_time);
+
+                time_point_count++;
+            }
+        }
+        else if (current_button_row == 1)
+        {
+            if (volume_point_count == 0)
+            {
+                tft.fillRect(20, 140, 230, 30, BLACK);
+                tft.drawRect(20, 140, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 148);
+                tft.printf("%.1f", temp_volume);
+
+                volume_point_count++;
+            }
+        }
+        else if (current_button_row == 2)
+        {
+            if (rate_point_count == 0)
+            {
+                tft.fillRect(20, 230, 230, 30, BLACK);
+                tft.drawRect(20, 230, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 238);
+                tft.printf("%.1f", temp_rate);
+
+                rate_point_count++;
+            }
+        }
+    }
     else if (move_or_number == ok_move)
     {
         if (current_button_row == 3) // Change Unit
@@ -1800,19 +1854,19 @@ void update_new_injection_page(int move_or_number)
         }
         else if (current_button_row == 5) // Create
         {
-            if (temp_time == 0)
+            if (temp_time == double(0))
             {
                 program_state = new_injection_error_no_time_page;
                 current_button_row = 0;
                 set_new_injection_error_no_time_page();
             }
-            else if (temp_volume == 0 && temp_rate == 0)
+            else if (temp_volume == double(0) && temp_rate == double(0))
             {
                 program_state = new_injection_error_no_volume_or_rate_page;
                 current_button_row = 0;
                 set_new_injection_error_no_volume_or_rate_page();
             }
-            else if (temp_volume == 0)
+            else if (temp_volume == double(0))
             {
                 input_time = temp_time;
                 input_rate = temp_rate;
@@ -1822,7 +1876,7 @@ void update_new_injection_page(int move_or_number)
                 current_button_row = 0;
                 set_injection_progress_page();
             }
-            else if (temp_rate == 0)
+            else if (temp_rate == double(0))
             {
                 input_time = temp_time;
                 input_volume = temp_volume;
@@ -1831,8 +1885,9 @@ void update_new_injection_page(int move_or_number)
                 program_state = injection_progress_page;
                 current_button_row = 0;
                 set_injection_progress_page();
+                // stepper_move();
             }
-            else if (temp_volume != 0 && temp_rate != 0)
+            else if (temp_volume != double(0) && temp_rate != double(0))
             {
                 program_state = new_injection_error_both_volume_and_rate_page;
                 current_button_row = 0;
@@ -1849,43 +1904,145 @@ void update_new_injection_page(int move_or_number)
             set_menu_page();
         }
     }
-    else
+    else if (move_or_number == erase_move)
     {
         if (current_button_row == 0)
         {
-            temp_time *= 10;
-            temp_time += move_or_number;
-
             tft.fillRect(20, 70, 230, 30, BLACK);
             tft.drawRect(20, 70, 230, 30, WHITE);
 
-            tft.setTextColor(WHITE);
-            tft.setCursor(24, 78);
-            tft.printf("%.2f", temp_time);
+            temp_time = 0;
+            time_point_count = 0;
         }
         else if (current_button_row == 1)
         {
-            temp_volume *= 10;
-            temp_volume += move_or_number;
-
             tft.fillRect(20, 140, 230, 30, BLACK);
             tft.drawRect(20, 140, 230, 30, WHITE);
 
-            tft.setTextColor(WHITE);
-            tft.setCursor(24, 148);
-            tft.printf("%.2f", temp_volume);
+            temp_volume = 0;
+            volume_point_count = 0;
         }
         else if (current_button_row == 2)
         {
-            temp_rate *= 10;
-            temp_rate += move_or_number;
-
             tft.fillRect(20, 230, 230, 30, BLACK);
             tft.drawRect(20, 230, 230, 30, WHITE);
 
-            tft.setTextColor(WHITE);
-            tft.setCursor(24, 238);
-            tft.printf("%.2f", temp_rate);
+            temp_rate = 0;
+            rate_point_count = 0;
+        }
+    }
+    else
+    {
+        if (current_button_row == 0) // time
+        {
+            if (time_point_count == 0)
+            {
+                temp_time *= 10;
+                temp_time += move_or_number;
+
+                tft.fillRect(20, 70, 230, 30, BLACK);
+                tft.drawRect(20, 70, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 78);
+                tft.printf("%.0f", temp_time);
+            }
+            else if (time_point_count == 1)
+            {
+                temp_time = temp_time + (double(move_or_number) / 10.0);
+                tft.fillRect(20, 70, 230, 30, BLACK);
+                tft.drawRect(20, 70, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 78);
+                tft.printf("%.1f", temp_time);
+                time_point_count++;
+            }
+            else if (time_point_count == 2)
+            {
+                temp_time = temp_time + (double(move_or_number) / 100.0);
+                tft.fillRect(20, 70, 230, 30, BLACK);
+                tft.drawRect(20, 70, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 78);
+                tft.printf("%.2f", temp_time);
+                time_point_count++;
+            }
+        }
+        else if (current_button_row == 1) // volume
+        {
+            if (volume_point_count == 0)
+            {
+                temp_volume *= 10;
+                temp_volume += move_or_number;
+
+                tft.fillRect(20, 140, 230, 30, BLACK);
+                tft.drawRect(20, 140, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 148);
+                tft.printf("%.0f", temp_volume);
+            }
+            else if (volume_point_count == 1)
+            {
+                temp_volume = temp_volume + (double(move_or_number) / 10.0);
+                tft.fillRect(20, 140, 230, 30, BLACK);
+                tft.drawRect(20, 140, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 148);
+                tft.printf("%.1f", temp_volume);
+                volume_point_count++;
+            }
+            else if (volume_point_count == 2)
+            {
+                temp_volume = temp_volume + (double(move_or_number) / 100.0);
+                tft.fillRect(20, 140, 230, 30, BLACK);
+                tft.drawRect(20, 140, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 148);
+                tft.printf("%.2f", temp_volume);
+                volume_point_count++;
+            }
+        }
+        else if (current_button_row == 2) // rate
+        {
+            if (rate_point_count == 0)
+            {
+                temp_rate *= 10;
+                temp_rate += move_or_number;
+
+                tft.fillRect(20, 230, 230, 30, BLACK);
+                tft.drawRect(20, 230, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 238);
+                tft.printf("%.0f", temp_rate);
+            }
+            else if (rate_point_count == 1)
+            {
+                temp_rate = temp_rate + (double(move_or_number) / 10.0);
+                tft.fillRect(20, 230, 230, 30, BLACK);
+                tft.drawRect(20, 230, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 238);
+                tft.printf("%.1f", temp_rate);
+                rate_point_count++;
+            }
+            else if (rate_point_count == 2)
+            {
+                temp_rate = temp_rate + (double(move_or_number) / 100.0);
+                tft.fillRect(20, 230, 230, 30, BLACK);
+                tft.drawRect(20, 230, 230, 30, WHITE);
+
+                tft.setTextColor(WHITE);
+                tft.setCursor(24, 238);
+                tft.printf("%.2f", temp_rate);
+                rate_point_count++;
+            }
         }
     }
 }
@@ -1933,6 +2090,7 @@ void update_new_injection_error_no_time_page(int move)
     {
         program_state = new_injection_page;
         current_button_row = 0;
+        time_point_count = 0;
         new_injection_flag = true;
         set_new_injection_page();
     }
@@ -1981,6 +2139,8 @@ void update_new_injection_error_no_volume_or_rate_page(int move)
     {
         program_state = new_injection_page;
         current_button_row = 1;
+        volume_point_count = 0;
+        rate_point_count = 0;
         new_injection_flag = true;
         set_new_injection_page();
     }
@@ -2033,7 +2193,9 @@ void update_new_injection_error_both_volume_and_rate_page(int move)
     {
         program_state = new_injection_page;
         temp_volume = 0;
+        volume_point_count = 0;
         temp_rate = 0;
+        rate_point_count = 0;
         current_button_row = 1;
         new_injection_flag = true;
         set_new_injection_page();
@@ -2268,5 +2430,33 @@ void update_end_page(int move)
             program_state = change_syringe_page;
             current_button_row = 0;
         }
+    }
+}
+
+double calculate_height()
+{
+    return input_volume / (PI * syringe * syringe) * 1000;
+}
+
+void stepper_move()
+{
+    double height = calculate_height();
+    digitalWrite(dir, LOW);
+
+    int rounds = 10000 * height / 3.5;                    // 101,057.14285714285714285714285714
+    int calculate_delay = input_time * 30000000 / rounds; // 296.86216689591022888073067674679
+
+    Serial.println(rounds);
+    Serial.println(calculate_delay);
+
+    for (int Index = 0; Index < 101057; Index++)
+    {
+        digitalWrite(step, HIGH);
+
+        delayMicroseconds(297);
+
+        digitalWrite(step, LOW);
+
+        delayMicroseconds(297);
     }
 }
