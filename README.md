@@ -3,6 +3,7 @@
 
 ## Overview
 The following images were captured from the device's LCD, which I designed and used to control the injection device by programming the stepper motor.
+
 ![](https://i.ibb.co/JmtNqVg/4-1.jpg)
 
 ![](https://i.ibb.co/RPZXnfv/4-3.jpg)
