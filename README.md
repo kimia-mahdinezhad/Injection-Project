@@ -4,21 +4,21 @@
 ## Overview
 The following images were captured from the device's LCD, which I designed and used to control the injection device by programming the stepper motor.
 
-![](https://i.ibb.co/JmtNqVg/4-1.jpg)
+![](https://github.com/kimia-mahdinezhad/Injection-Project/blob/main/Media/4-1.jpg)
 
-![](https://i.ibb.co/RPZXnfv/4-3.jpg)
+![](https://github.com/kimia-mahdinezhad/Injection-Project/blob/main/Media/4-3.jpg)
 
-![](https://i.ibb.co/zRx00BT/4-4.jpg)
+![](https://github.com/kimia-mahdinezhad/Injection-Project/blob/main/Media/4-4.jpg)
 
-![](https://i.ibb.co/rQbL1gT/4-5.jpg)
+![](https://github.com/kimia-mahdinezhad/Injection-Project/blob/main/Media/4-5.jpg)
 
-![](https://i.ibb.co/sygQcyV/4-6.jpg)
+![](https://github.com/kimia-mahdinezhad/Injection-Project/blob/main/Media/4-6.jpg)
 
-![](https://i.ibb.co/T10kwvP/4-7.jpg)
+![](https://github.com/kimia-mahdinezhad/Injection-Project/blob/main/Media/4-7.jpg)
 
-![](https://i.ibb.co/JFKPzpY/4-8.jpg)
+![](https://github.com/kimia-mahdinezhad/Injection-Project/blob/main/Media/4-8.jpg)
 
-![](https://i.ibb.co/6nNCDbk/4-9.jpg)
+![](https://github.com/kimia-mahdinezhad/Injection-Project/blob/main/Media/4-9.jpg)
 
 ## Main Text
 
